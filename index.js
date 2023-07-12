@@ -29,7 +29,15 @@ async function run() {
             const user = req.body;
             const result = await userCollection.insertOne(user);
             res.send(result);
-        })
+        });
+
+        // Getting the saved user information form database
+        app.get('/allUsers', async(req,res)=>{
+            const query ={};
+            const cursor = userCollection.find(query);
+            const users = await cursor.toArray();
+            res.send(users);
+        });
 
     } finally {
 
