@@ -26,28 +26,36 @@ async function run() {
         const productCollection = client.db('usedLaptopShop').collection('products');
 
         // saving users information in the database
-        app.post('/allUsers', async(req,res)=>{
+        app.post('/allUsers', async (req, res) => {
             const user = req.body;
             const result = await userCollection.insertOne(user);
             res.send(result);
         });
 
         // Getting the saved user information form database
-        app.get('/allUsers', async(req,res)=>{
-            const query ={};
+        app.get('/allUsers', async (req, res) => {
+            const query = {};
             const cursor = userCollection.find(query);
             const users = await cursor.toArray();
             res.send(users);
         });
 
         // Saving product information in the database
-        app.post('/product', async(req,res)=>{
+        app.post('/product', async (req, res) => {
             const product = req.body;
             const result = await productCollection.insertOne(product);
             res.send(result);
-        })
+        });
 
-    } finally {
+        // Getting the products from database
+        app.get('/product', async (req, res) => {
+            const query = {};
+            const cursor = productCollection.find(query);
+            const products = await cursor.toArray();
+            res.send(products);
+        })
+    }
+    finally {
 
     }
 }
