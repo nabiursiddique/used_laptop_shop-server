@@ -23,6 +23,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         const userCollection = client.db('usedLaptopShop').collection('users');
+        const productCollection = client.db('usedLaptopShop').collection('products');
 
         // saving users information in the database
         app.post('/allUsers', async(req,res)=>{
@@ -38,6 +39,13 @@ async function run() {
             const users = await cursor.toArray();
             res.send(users);
         });
+
+        // Saving product information in the database
+        app.post('/product', async(req,res)=>{
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
+            res.send(result);
+        })
 
     } finally {
 
