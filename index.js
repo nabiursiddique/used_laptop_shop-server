@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 const app = express();
@@ -25,14 +25,14 @@ async function run() {
         const userCollection = client.db('usedLaptopShop').collection('users');
         const productCollection = client.db('usedLaptopShop').collection('products');
 
-        // saving users information in the database
+        // saving users information in the db
         app.post('/allUsers', async (req, res) => {
             const user = req.body;
             const result = await userCollection.insertOne(user);
             res.send(result);
         });
 
-        // Getting the saved user information form database
+        // Getting the saved user information form db
         app.get('/allUsers', async (req, res) => {
             const query = {};
             const cursor = userCollection.find(query);
@@ -40,20 +40,48 @@ async function run() {
             res.send(users);
         });
 
-        // Saving product information in the database
+        // Deleting user from the db (We will make it available only for admin later)
+        app.delete('/allUsers/:id', async(req,res)=>{
+            const id = req.params.id;
+            const query={_id: new ObjectId(id)};
+            const result = await userCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        // Saving product information in the db
         app.post('/product', async (req, res) => {
             const product = req.body;
             const result = await productCollection.insertOne(product);
             res.send(result);
         });
 
-        // Getting the products from database
+        // Getting all the products from db
         app.get('/product', async (req, res) => {
             const query = {};
             const cursor = productCollection.find(query);
             const products = await cursor.toArray();
             res.send(products);
+        });
+
+        // Getting user specific products from db
+        app.get('/products',async(req,res)=>{
+            const email = req.query.email;
+            const query ={email: email};
+            const cursor = productCollection.find(query);
+            const products = await cursor.toArray();
+            res.send(products);
+        });
+
+        // Deleting a product from database (we will use this api two time one for admin all product and another for individual seller.)
+        app.delete('/products/:id', async(req,res)=>{
+            const id = req.params.id;
+            const query ={_id: new ObjectId(id)};
+            const result = await productCollection.deleteOne(query);
+            res.send(result);
         })
+
+
+
     }
     finally {
 
