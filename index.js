@@ -40,6 +40,15 @@ async function run() {
             res.send(users);
         });
 
+         // Getting user role
+         app.get('/allUsersRole',async(req,res)=>{
+            const email = req.query.email;
+            const query ={email: email};
+            const cursor = userCollection.find(query);
+            const user = await cursor.toArray();
+            res.send(user);
+        });
+
         // Deleting user from the db (We will make it available only for admin later)
         app.delete('/allUsers/:id', async(req,res)=>{
             const id = req.params.id;
@@ -71,6 +80,7 @@ async function run() {
             const products = await cursor.toArray();
             res.send(products);
         });
+
 
         // Deleting a product from database (we will use this api two time one for admin all product and another for individual seller.)
         app.delete('/products/:id', async(req,res)=>{
