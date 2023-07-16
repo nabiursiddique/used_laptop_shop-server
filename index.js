@@ -24,6 +24,7 @@ async function run() {
     try {
         const userCollection = client.db('usedLaptopShop').collection('users');
         const productCollection = client.db('usedLaptopShop').collection('products');
+        const bookingCollection = client.db('usedLaptopShop').collection('bookings');
 
         // saving users information in the db
         app.post('/allUsers', async (req, res) => {
@@ -40,35 +41,35 @@ async function run() {
             res.send(users);
         });
 
-         // Getting user role
-         app.get('/allUsersRole',async(req,res)=>{
+        // Getting user role
+        app.get('/allUsersRole', async (req, res) => {
             const email = req.query.email;
-            const query ={email: email};
+            const query = { email: email };
             const cursor = userCollection.find(query);
             const user = await cursor.toArray();
             res.send(user);
         });
 
         // Getting all the buyers
-        app.get('/allBuyers',async(req,res)=>{
+        app.get('/allBuyers', async (req, res) => {
             const role = req.query.role;
-            const query ={role: role};
+            const query = { role: role };
             const buyers = await userCollection.find(query).toArray();
             res.send(buyers);
         });
 
         // Getting all the sellers
-        app.get('/allSellers', async(req,res)=>{
+        app.get('/allSellers', async (req, res) => {
             const role = req.query.role;
-            const query = {role: role};
+            const query = { role: role };
             const sellers = await userCollection.find(query).toArray();
             res.send(sellers);
         })
 
         // Deleting user from the db (We will make it available only for admin later)
-        app.delete('/allUsers/:id', async(req,res)=>{
+        app.delete('/allUsers/:id', async (req, res) => {
             const id = req.params.id;
-            const query={_id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const result = await userCollection.deleteOne(query);
             res.send(result);
         });
@@ -89,22 +90,29 @@ async function run() {
         });
 
         // Getting user specific products from db
-        app.get('/products',async(req,res)=>{
+        app.get('/products', async (req, res) => {
             const email = req.query.email;
-            const query ={email: email};
+            const query = { email: email };
             const cursor = productCollection.find(query);
             const products = await cursor.toArray();
             res.send(products);
         });
 
 
-        // Deleting a product from database (we will use this api two time one for admin all product and another for individual seller.)
-        app.delete('/products/:id', async(req,res)=>{
+        // Deleting a product from db (we will use this api two time one for admin all product and another for individual seller.)
+        app.delete('/products/:id', async (req, res) => {
             const id = req.params.id;
-            const query ={_id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const result = await productCollection.deleteOne(query);
             res.send(result);
         });
+
+        // saving users booking information in the db
+        app.post('/booking',async(req,res)=>{
+            const booking = req.body;
+            const result = await bookingCollection.insertOne(booking);
+            res.send(result);
+        })
 
     }
     finally {
