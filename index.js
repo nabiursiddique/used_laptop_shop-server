@@ -49,6 +49,14 @@ async function run() {
             res.send(user);
         });
 
+        // Getting all the buyers
+        app.get('/allBuyers',async(req,res)=>{
+            const role = req.query.role;
+            const query ={role: role};
+            const buyers = await userCollection.find(query).toArray();
+            res.send(buyers);
+        })
+
         // Deleting user from the db (We will make it available only for admin later)
         app.delete('/allUsers/:id', async(req,res)=>{
             const id = req.params.id;
