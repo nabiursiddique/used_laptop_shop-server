@@ -55,6 +55,14 @@ async function run() {
             const query ={role: role};
             const buyers = await userCollection.find(query).toArray();
             res.send(buyers);
+        });
+
+        // Getting all the sellers
+        app.get('/allSellers', async(req,res)=>{
+            const role = req.query.role;
+            const query = {role: role};
+            const sellers = await userCollection.find(query).toArray();
+            res.send(sellers);
         })
 
         // Deleting user from the db (We will make it available only for admin later)
@@ -63,7 +71,7 @@ async function run() {
             const query={_id: new ObjectId(id)};
             const result = await userCollection.deleteOne(query);
             res.send(result);
-        })
+        });
 
         // Saving product information in the db
         app.post('/product', async (req, res) => {
@@ -96,9 +104,7 @@ async function run() {
             const query ={_id: new ObjectId(id)};
             const result = await productCollection.deleteOne(query);
             res.send(result);
-        })
-
-
+        });
 
     }
     finally {
