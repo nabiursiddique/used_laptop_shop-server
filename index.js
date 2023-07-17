@@ -115,6 +115,14 @@ async function run() {
             res.send(result);
         });
 
+        // Getting user specific bookings 
+        app.get('/booking', async(req,res)=>{
+            const email = req.query.email;
+            const query = {buyerEmail: email};
+            const result = await bookingCollection.find(query).toArray();
+            res.send(result);
+        })
+
         // updating/marking booked product as booked=true
         app.put('/booking/:id', async(req,res)=>{
             const productId = req.params.id;
@@ -126,7 +134,7 @@ async function run() {
             }
             const result =await productCollection.updateOne(filter, updateDoc, options);
             res.send(result);
-        });
+        }); 
 
     }
     finally {
