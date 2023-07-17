@@ -66,7 +66,7 @@ async function run() {
             res.send(sellers);
         })
 
-        // Deleting user from the db (We will make it available only for admin later)
+        // Deleting user from the db
         app.delete('/allUsers/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -82,7 +82,7 @@ async function run() {
         });
 
         // Getting all the products from db
-        app.get('/product', async (req, res) => {
+        app.get('/products', async (req, res) => {
             const query = {};
             const cursor = productCollection.find(query);
             const products = await cursor.toArray();
@@ -90,7 +90,7 @@ async function run() {
         });
 
         // Getting user specific products from db
-        app.get('/products', async (req, res) => {
+        app.get('/userProducts', async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
             const cursor = productCollection.find(query);
@@ -108,7 +108,7 @@ async function run() {
         });
 
         // saving users booking information in the db
-        app.post('/booking',async(req,res)=>{
+        app.post('/booking', async (req, res) => {
             const booking = req.body;
             const result = await bookingCollection.insertOne(booking);
             res.send(result);
