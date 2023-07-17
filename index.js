@@ -81,11 +81,12 @@ async function run() {
             res.send(result);
         });
 
-        // Getting all the products from db
+        // Getting all the products from db without booked products
         app.get('/products', async (req, res) => {
             const query = {};
             const cursor = productCollection.find(query);
-            const products = await cursor.toArray();
+            const allProducts = await cursor.toArray();
+            const products = allProducts.filter(product => !product.booked);
             res.send(products);
         });
 
@@ -114,7 +115,7 @@ async function run() {
             res.send(result);
         });
 
-        // marking booked product as booked=true
+        // updating/marking booked product as booked=true
         app.put('/booking/:id', async(req,res)=>{
             const productId = req.params.id;
             const product = req.body;
@@ -125,7 +126,7 @@ async function run() {
             }
             const result =await productCollection.updateOne(filter, updateDoc, options);
             res.send(result);
-        })
+        });
 
     }
     finally {
