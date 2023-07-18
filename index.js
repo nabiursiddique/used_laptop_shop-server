@@ -50,6 +50,20 @@ async function run() {
             res.send(user);
         });
 
+        // API for Changing the user role to admin
+        app.patch('/allUsers', async(req,res)=>{
+            const email = req.query.email;
+            const filter = {email: email};
+            const options ={upsert: true};
+            const updateDoc={
+               $set:{
+                role: "Admin"
+               }
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        });
+
         // Getting all the buyers
         app.get('/allBuyers', async (req, res) => {
             const role = req.query.role;
@@ -64,7 +78,7 @@ async function run() {
             const query = { role: role };
             const sellers = await userCollection.find(query).toArray();
             res.send(sellers);
-        })
+        });
 
         // Deleting user from the db
         app.delete('/allUsers/:id', async (req, res) => {
@@ -121,7 +135,7 @@ async function run() {
             const query = {buyerEmail: email};
             const result = await bookingCollection.find(query).toArray();
             res.send(result);
-        })
+        });
 
         // updating/marking booked product as booked=true
         app.put('/booking/:id', async(req,res)=>{
