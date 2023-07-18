@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 const port = process.env.PORT || 5000;
 const app = express();
 
@@ -25,6 +27,7 @@ async function run() {
         const userCollection = client.db('usedLaptopShop').collection('users');
         const productCollection = client.db('usedLaptopShop').collection('products');
         const bookingCollection = client.db('usedLaptopShop').collection('bookings');
+        const paymentCollection = client.db('usedLaptopShop').collection('payments');
 
         // saving users information in the db
         app.post('/allUsers', async (req, res) => {
@@ -114,7 +117,7 @@ async function run() {
         });
 
 
-        // Deleting a product from db (we will use this api two time one for admin all product and another for individual seller.)
+        // Deleting a product from db
         app.delete('/products/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -137,6 +140,22 @@ async function run() {
             res.send(result);
         });
 
+        // Showing the buyer information in the seller dashboard
+        app.get('/buyerInfo', async(req,res)=>{
+            const email = req.query.email;
+            const query = {sellerEmail: email};
+            const result = await bookingCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        // Getting product for payment
+        app.get('/booking/:id',async(req,res)=>{
+            const id = req.params.id;
+            const query ={productId: id};
+            const result = await bookingCollection.findOne(query);
+            res.send(result);
+        })
+
         // updating/marking booked product as booked=true
         app.put('/booking/:id', async(req,res)=>{
             const productId = req.params.id;
@@ -150,14 +169,46 @@ async function run() {
             res.send(result);
         }); 
 
+        // Stripe payment api
+        app.post('/create-payment-intent',async(req,res)=>{
+            const booking = req.body;
+            const price =booking.productPrice;
+            const amount = price*100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                  ]
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+              });
+        });
+
+        // Saving payment information in the database
+        app.post('/payments', async(req,res)=>{
+            const payment = req.body;
+            const result = await paymentCollection.insertOne(payment);
+            const productId = payment.productId;
+            const filter ={productId: productId}
+            const updateDoc ={
+                $set:{
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updateResult = await bookingCollection.updateOne(filter,updateDoc);
+            res.send(result);
+        })
+
     }
     finally {
 
     }
 }
 run().catch(console.dir);
-
-
 
 
 app.get('/', async (req, res) => {
