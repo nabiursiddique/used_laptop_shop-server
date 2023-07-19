@@ -66,7 +66,7 @@ async function run() {
         });
 
         // Getting the saved user information form db
-        app.get('/allUsers', async (req, res) => {
+        app.get('/allUsers', verifyJWT, async (req, res) => {
             const query = {};
             const cursor = userCollection.find(query);
             const users = await cursor.toArray();
@@ -74,7 +74,7 @@ async function run() {
         });
 
         // Getting user role
-        app.get('/allUsersRole', async (req, res) => {
+        app.get('/allUsersRole',verifyJWT, async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
             const cursor = userCollection.find(query);
@@ -97,7 +97,7 @@ async function run() {
         });
 
         // Getting all the buyers
-        app.get('/allBuyers', async (req, res) => {
+        app.get('/allBuyers',verifyJWT, async (req, res) => {
             const role = req.query.role;
             const query = { role: role };
             const buyers = await userCollection.find(query).toArray();
@@ -105,7 +105,7 @@ async function run() {
         });
 
         // Getting all the sellers
-        app.get('/allSellers', async (req, res) => {
+        app.get('/allSellers', verifyJWT, async (req, res) => {
             const role = req.query.role;
             const query = { role: role };
             const sellers = await userCollection.find(query).toArray();
@@ -137,8 +137,12 @@ async function run() {
         });
 
         // Getting user specific products from db
-        app.get('/userProducts', async (req, res) => {
+        app.get('/userProducts',verifyJWT, async (req, res) => {
             const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                res.status(403).send({ message: "forbidden access" })
+            }
             const query = { email: email };
             const cursor = productCollection.find(query);
             const userProducts = await cursor.toArray();
@@ -174,8 +178,12 @@ async function run() {
         });
 
         // Showing the buyer information in the seller dashboard
-        app.get('/buyerInfo', async (req, res) => {
+        app.get('/buyerInfo',verifyJWT, async (req, res) => {
             const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                res.status(403).send({ message: "forbidden access" })
+            }
             const query = { sellerEmail: email };
             const result = await bookingCollection.find(query).toArray();
             res.send(result);
