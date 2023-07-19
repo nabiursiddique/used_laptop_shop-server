@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -22,12 +23,40 @@ const client = new MongoClient(uri, {
     }
 });
 
+// middleware for verify JWT
+function verifyJWT(req, res, next){
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+       return res.status(401).send('Unauthorized Access');
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function(err, decoded){
+        if (err) {
+            return res.status(403).send({ message: "Forbidden access" })
+        }
+        req.decoded = decoded
+        next();
+    })
+};
+
 async function run() {
     try {
         const userCollection = client.db('usedLaptopShop').collection('users');
         const productCollection = client.db('usedLaptopShop').collection('products');
         const bookingCollection = client.db('usedLaptopShop').collection('bookings');
         const paymentCollection = client.db('usedLaptopShop').collection('payments');
+
+        // JWT
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "10h" });
+                return res.send({ accessToken: token })
+            }
+            res.status(403).send({ accessToken: '' });
+        });
 
         // saving users information in the db
         app.post('/allUsers', async (req, res) => {
@@ -54,14 +83,14 @@ async function run() {
         });
 
         // API for Changing the user role to admin
-        app.patch('/allUsers', async(req,res)=>{
+        app.patch('/allUsers', async (req, res) => {
             const email = req.query.email;
-            const filter = {email: email};
-            const options ={upsert: true};
-            const updateDoc={
-               $set:{
-                role: "Admin"
-               }
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    role: "Admin"
+                }
             };
             const result = await userCollection.updateOne(filter, updateDoc, options);
             res.send(result);
@@ -133,73 +162,77 @@ async function run() {
         });
 
         // Getting user specific bookings 
-        app.get('/booking', async(req,res)=>{
+        app.get('/booking', verifyJWT, async (req, res) => {
             const email = req.query.email;
-            const query = {buyerEmail: email};
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                res.status(403).send({ message: "forbidden access" })
+            }
+            const query = { buyerEmail: email };
             const result = await bookingCollection.find(query).toArray();
             res.send(result);
         });
 
         // Showing the buyer information in the seller dashboard
-        app.get('/buyerInfo', async(req,res)=>{
+        app.get('/buyerInfo', async (req, res) => {
             const email = req.query.email;
-            const query = {sellerEmail: email};
+            const query = { sellerEmail: email };
             const result = await bookingCollection.find(query).toArray();
             res.send(result);
         });
 
         // Getting product for payment
-        app.get('/booking/:id',async(req,res)=>{
+        app.get('/booking/:id', async (req, res) => {
             const id = req.params.id;
-            const query ={productId: id};
+            const query = { productId: id };
             const result = await bookingCollection.findOne(query);
             res.send(result);
         })
 
         // updating/marking booked product as booked=true
-        app.put('/booking/:id', async(req,res)=>{
+        app.put('/booking/:id', async (req, res) => {
             const productId = req.params.id;
             const product = req.body;
-            const filter = {_id: new ObjectId(productId)};
+            const filter = { _id: new ObjectId(productId) };
             const options = { upsert: true };
-            const updateDoc ={
+            const updateDoc = {
                 $set: product
             }
-            const result =await productCollection.updateOne(filter, updateDoc, options);
+            const result = await productCollection.updateOne(filter, updateDoc, options);
             res.send(result);
-        }); 
+        });
 
         // Stripe payment api
-        app.post('/create-payment-intent',async(req,res)=>{
+        app.post('/create-payment-intent', async (req, res) => {
             const booking = req.body;
-            const price =booking.productPrice;
-            const amount = price*100;
+            const price = booking.productPrice;
+            const amount = price * 100;
 
             const paymentIntent = await stripe.paymentIntents.create({
                 currency: 'usd',
                 amount: amount,
                 "payment_method_types": [
                     "card"
-                  ]
+                ]
             });
             res.send({
                 clientSecret: paymentIntent.client_secret,
-              });
+            });
         });
 
         // Saving payment information in the database
-        app.post('/payments', async(req,res)=>{
+        app.post('/payments', async (req, res) => {
             const payment = req.body;
             const result = await paymentCollection.insertOne(payment);
             const productId = payment.productId;
-            const filter ={productId: productId}
-            const updateDoc ={
-                $set:{
+            const filter = { productId: productId }
+            const updateDoc = {
+                $set: {
                     paid: true,
                     transactionId: payment.transactionId
                 }
             }
-            const updateResult = await bookingCollection.updateOne(filter,updateDoc);
+            const updateResult = await bookingCollection.updateOne(filter, updateDoc);
             res.send(result);
         })
 
