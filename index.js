@@ -52,7 +52,7 @@ async function run() {
             const query = { email: email };
             const user = await userCollection.findOne(query);
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "10h" });
                 return res.send({ accessToken: token })
             }
             res.status(403).send({ accessToken: '' });
@@ -72,6 +72,14 @@ async function run() {
             const users = await cursor.toArray();
             res.send(users);
         });
+
+        // Getting verified users
+        app.get('/verifiedUsers',async(req,res)=>{
+            const email= req.query.email;
+            const query={email: email};
+            const result = await userCollection.findOne(query);
+            res.send(result);
+        })
 
         // Getting user role
         app.get('/allUsersRole',verifyJWT, async (req, res) => {
@@ -96,7 +104,7 @@ async function run() {
             res.send(result);
         });
 
-        // API for making the seller verified
+        // API for making the seller verified and store in db
         app.patch('/verifySeller', async(req,res)=>{
             const email = req.query.email;
             const filter = {email: email};
@@ -108,7 +116,8 @@ async function run() {
             };
             const result = await userCollection.updateOne(filter,updateDoc,options);
             res.send(result);
-        })
+        });
+
 
         // Getting all the buyers
         app.get('/allBuyers',verifyJWT, async (req, res) => {
