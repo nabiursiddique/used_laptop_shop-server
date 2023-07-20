@@ -52,7 +52,7 @@ async function run() {
             const query = { email: email };
             const user = await userCollection.findOne(query);
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "10h" });
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
                 return res.send({ accessToken: token })
             }
             res.status(403).send({ accessToken: '' });
@@ -95,6 +95,20 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc, options);
             res.send(result);
         });
+
+        // API for making the seller verified
+        app.patch('/verifySeller', async(req,res)=>{
+            const email = req.query.email;
+            const filter = {email: email};
+            const options = {upsert: true};
+            const updateDoc={
+                $set:{
+                    verified: true
+                }
+            };
+            const result = await userCollection.updateOne(filter,updateDoc,options);
+            res.send(result);
+        })
 
         // Getting all the buyers
         app.get('/allBuyers',verifyJWT, async (req, res) => {
