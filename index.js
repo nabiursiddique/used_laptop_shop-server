@@ -61,6 +61,15 @@ async function run() {
         // saving users information in the db
         app.post('/allUsers', async (req, res) => {
             const user = req.body;
+            const query ={
+                name: user.name,
+                email: user.email
+            }
+            const alreadyCreatedUsers = await userCollection.find(query).toArray();
+
+            if(alreadyCreatedUsers.length){
+                return;
+            }
             const result = await userCollection.insertOne(user);
             res.send(result);
         });
