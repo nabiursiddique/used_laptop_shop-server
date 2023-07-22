@@ -68,6 +68,7 @@ async function run() {
             const alreadyCreatedUsers = await userCollection.find(query).toArray();
 
             if(alreadyCreatedUsers.length){
+                res.send(alreadyCreatedUsers);
                 return;
             }
             const result = await userCollection.insertOne(user);
