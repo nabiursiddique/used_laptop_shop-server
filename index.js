@@ -24,13 +24,13 @@ const client = new MongoClient(uri, {
 });
 
 // middleware for verify JWT
-function verifyJWT(req, res, next){
+function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-       return res.status(401).send('Unauthorized Access');
+        return res.status(401).send('Unauthorized Access');
     }
     const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function(err, decoded){
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
         if (err) {
             return res.status(403).send({ message: "Forbidden access" })
         }
@@ -44,6 +44,7 @@ async function run() {
         const userCollection = client.db('usedLaptopShop').collection('users');
         const productCollection = client.db('usedLaptopShop').collection('products');
         const bookingCollection = client.db('usedLaptopShop').collection('bookings');
+        const blogCollection = client.db('usedLaptopShop').collection('blogContents')
         const paymentCollection = client.db('usedLaptopShop').collection('payments');
 
         // JWT
@@ -61,13 +62,13 @@ async function run() {
         // saving users information in the db
         app.post('/allUsers', async (req, res) => {
             const user = req.body;
-            const query ={
+            const query = {
                 name: user.name,
                 email: user.email
             }
             const alreadyCreatedUsers = await userCollection.find(query).toArray();
 
-            if(alreadyCreatedUsers.length){
+            if (alreadyCreatedUsers.length) {
                 res.send(alreadyCreatedUsers);
                 return;
             }
@@ -84,15 +85,15 @@ async function run() {
         });
 
         // Getting verified users
-        app.get('/verifiedUsers',async(req,res)=>{
-            const email= req.query.email;
-            const query={email: email};
+        app.get('/verifiedUsers', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
             const result = await userCollection.findOne(query);
             res.send(result);
         })
 
         // Getting user role
-        app.get('/allUsersRole',verifyJWT, async (req, res) => {
+        app.get('/allUsersRole', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
             const cursor = userCollection.find(query);
@@ -115,22 +116,22 @@ async function run() {
         });
 
         // API for making the seller verified and store in db
-        app.patch('/verifySeller', async(req,res)=>{
+        app.patch('/verifySeller', async (req, res) => {
             const email = req.query.email;
-            const filter = {email: email};
-            const options = {upsert: true};
-            const updateDoc={
-                $set:{
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
                     verified: true
                 }
             };
-            const result = await userCollection.updateOne(filter,updateDoc,options);
+            const result = await userCollection.updateOne(filter, updateDoc, options);
             res.send(result);
         });
 
 
         // Getting all the buyers
-        app.get('/allBuyers',verifyJWT, async (req, res) => {
+        app.get('/allBuyers', verifyJWT, async (req, res) => {
             const role = req.query.role;
             const query = { role: role };
             const buyers = await userCollection.find(query).toArray();
@@ -170,7 +171,7 @@ async function run() {
         });
 
         // Getting user specific products from db
-        app.get('/userProducts',verifyJWT, async (req, res) => {
+        app.get('/userProducts', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
             if (email !== decodedEmail) {
@@ -211,7 +212,7 @@ async function run() {
         });
 
         // Showing the buyer information in the seller dashboard
-        app.get('/buyerInfo',verifyJWT, async (req, res) => {
+        app.get('/buyerInfo', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
             if (email !== decodedEmail) {
@@ -240,6 +241,28 @@ async function run() {
                 $set: product
             }
             const result = await productCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        });
+
+        // Blog contents
+        app.get('/blogContents', async (req, res) => {
+            const query = {};
+            const cursor = blogCollection.find(query);
+            const blogs = await cursor.toArray();
+            res.send(blogs);
+        });
+
+        app.post('/blogContents', async (req, res) => {
+            const query = req.body;
+            const result = await blogCollection.insertOne(query);
+            res.send(result);
+
+        });
+
+        app.delete('/blogContents/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await blogCollection.deleteOne(query);
             res.send(result);
         });
 
@@ -275,7 +298,7 @@ async function run() {
             }
             const updateResult = await bookingCollection.updateOne(filter, updateDoc);
             res.send(result);
-        })
+        });
 
     }
     finally {
