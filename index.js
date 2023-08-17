@@ -170,6 +170,37 @@ async function run() {
             res.send(products);
         });
 
+        // Getting a specific product for edit
+        app.get('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const product = await productCollection.findOne(query);
+            res.send(product);
+        });
+
+        // Editing product information
+        app.patch('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedInfo = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    productName: updatedInfo.productName,
+                    originalPrice: updatedInfo.originalPrice,
+                    resalePrice: updatedInfo.resalePrice,
+                    yearOfPurchase: updatedInfo.yearOfPurchase,
+                    category: updatedInfo.category,
+                    condition: updatedInfo.condition,
+                    location: updatedInfo.location,
+                    phoneNumber: updatedInfo.phoneNumber,
+                    productDescription: updatedInfo.productDescription
+                }
+            };
+            const result = await productCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        });
+
         // Getting user specific products from db
         app.get('/userProducts', verifyJWT, async (req, res) => {
             const email = req.query.email;
